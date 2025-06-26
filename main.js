@@ -31,7 +31,9 @@ function createWindow() {
       preload: path.join(__dirname, 'preload.js')
     },
     icon: path.join(__dirname, 'assets', 'icon.png'),
-    titleBarStyle: process.platform === 'darwin' ? 'hiddenInset' : 'default',
+    titleBarStyle: 'default', // Use default title bar for proper window controls
+    movable: true, // Explicitly enable window movement
+    resizable: true, // Explicitly enable window resizing
     show: false
   });
 
