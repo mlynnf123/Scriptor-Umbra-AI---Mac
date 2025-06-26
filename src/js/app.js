@@ -1,3 +1,7 @@
+// Import CSS files
+import '../css/styles.css';
+import '../css/components.css';
+
 // Main Application Logic
 class ScriptorUmbraApp {
     constructor() {

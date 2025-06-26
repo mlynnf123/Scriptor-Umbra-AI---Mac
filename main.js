@@ -39,6 +39,9 @@ function createWindow() {
   mainWindow.loadFile(path.join(__dirname, 'build', 'index.html'));
   
   // Only open dev tools if explicitly requested
+  console.log('Process arguments:', process.argv);
+  console.log('DevTools flag present:', process.argv.includes('--devtools'));
+  
   if (process.argv.includes('--devtools')) {
     mainWindow.webContents.openDevTools();
   }
