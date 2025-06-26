@@ -1,12 +1,18 @@
 const path = require('path');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
+const CopyWebpackPlugin = require('copy-webpack-plugin');
 
 module.exports = {
   target: 'electron-renderer',
   entry: {
+    'web-storage': './src/js/web-storage.js',
     app: './src/js/app.js',
     chat: './src/js/chat.js',
+    'ai-input': './src/js/ai-input.js',
+    'ai-reasoning': './src/js/ai-reasoning.js',
+    'ai-suggestions': './src/js/ai-suggestions.js',
+    'ai-conversation': './src/js/ai-conversation.js',
     dashboard: './src/js/dashboard.js',
     'api-keys': './src/js/api-keys.js',
     conversations: './src/js/conversations.js',
@@ -56,10 +62,15 @@ module.exports = {
     new HtmlWebpackPlugin({
       template: './src/index.html',
       filename: 'index.html',
-      chunks: ['app', 'chat', 'dashboard', 'api-keys', 'conversations', 'settings']
+      chunks: ['web-storage', 'app', 'chat', 'ai-input', 'ai-reasoning', 'ai-suggestions', 'ai-conversation', 'dashboard', 'api-keys', 'conversations', 'settings']
     }),
     new MiniCssExtractPlugin({
       filename: 'css/[name].css'
+    }),
+    new CopyWebpackPlugin({
+      patterns: [
+        { from: 'src/assets', to: 'assets' }
+      ]
     })
   ],
   resolve: {

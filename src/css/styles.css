@@ -11,9 +11,9 @@
   --background-color: #0f172a;
   --surface-color: #1e293b;
   --border-color: #334155;
-  --text-primary: #f1f5f9;
-  --text-secondary: #cbd5e1;
-  --text-muted: #64748b;
+  --text-primary: #f8fafc;
+  --text-secondary: #e2e8f0;
+  --text-muted: #94a3b8;
   --sidebar-bg: #020617;
   --sidebar-text: #e2e8f0;
   --sidebar-hover: #1e293b;
@@ -65,7 +65,7 @@ body {
 
 /* Sidebar Styles */
 .sidebar {
-  width: 280px;
+  width: 240px;
   background-color: var(--sidebar-bg);
   color: var(--sidebar-text);
   display: flex;
@@ -83,13 +83,29 @@ body {
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  font-size: 1.25rem;
+  font-size: 1.125rem;
   font-weight: 600;
 }
 
 .app-logo i {
   font-size: 1.5rem;
   color: var(--primary-color);
+}
+
+.app-logo-image {
+  width: 36px;
+  height: 36px;
+  object-fit: cover;
+  border-radius: 8px;
+  flex-shrink: 0;
+}
+
+.avatar-logo {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+  display: block;
 }
 
 .sidebar-nav {

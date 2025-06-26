@@ -138,14 +138,47 @@ class ChatManager {
         try {
             this.isProcessing = true;
             
+            // Generate message ID for the AI response
+            const aiMessageId = `msg-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+            
+            // Remove typing indicator and add empty AI message
+            this.removeTypingIndicator();
+            
+            // Add empty AI message placeholder
+            const messagesContainer = document.getElementById('chatMessages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'message ai-message';
+            messageDiv.setAttribute('data-message-id', aiMessageId);
+            messageDiv.innerHTML = `
+                <div class="message-avatar">
+                    <img src="assets/logo.png" alt="AI" class="avatar-logo">
+                </div>
+                <div class="message-content">
+                    <p></p>
+                    <span class="message-time">${this.getCurrentTime()}</span>
+                </div>
+            `;
+            messagesContainer.appendChild(messageDiv);
+            
+            // Start reasoning animation
+            if (window.aiReasoningComponent) {
+                const reasoningSteps = this.generateReasoningSteps(message);
+                window.aiReasoningComponent.startReasoning(aiMessageId, reasoningSteps);
+            }
+            
             // Get AI response
             const response = await this.getAIResponse(message);
             
-            // Remove typing indicator
-            this.removeTypingIndicator();
+            // Stop reasoning and update message content
+            if (window.aiReasoningComponent) {
+                window.aiReasoningComponent.stopReasoning(aiMessageId);
+            }
             
-            // Add AI response to UI
-            this.addMessageToUI(response, 'assistant');
+            // Update the message content with the actual response
+            const messageContent = messageDiv.querySelector('.message-content p');
+            if (messageContent) {
+                messageContent.innerHTML = this.formatMessageContent(response);
+            }
 
             // Add AI message to conversation
             const aiMessage = {
@@ -164,7 +197,13 @@ class ChatManager {
         } catch (error) {
             console.error('Error getting AI response:', error);
             this.removeTypingIndicator();
-            this.addMessageToUI('Sorry, I encountered an error while processing your request. Please check your API key configuration and try again.', 'assistant', true);
+            
+            // Check if it's an API key error
+            if (error.message.includes('No API key configured')) {
+                this.showErrorModal(error.message);
+            } else {
+                this.addMessageToUI('Sorry, I encountered an error while processing your request. ' + error.message, 'assistant', true);
+            }
         } finally {
             this.isProcessing = false;
         }
@@ -172,7 +211,7 @@ class ChatManager {
 
     async getAIResponse(message) {
         const provider = document.getElementById('aiProviderSelect').value;
-        const apiKeys = await window.electronAPI.apiKeys.get() || {};
+        const apiKeys = await window.electronAPI.store.get('apiKeys') || {};
         const apiKey = apiKeys[provider];
 
         if (!apiKey) {
@@ -457,15 +496,21 @@ class ChatManager {
         return data.candidates[0].content.parts[0].text;
     }
 
-    addMessageToUI(content, role, isError = false) {
+    addMessageToUI(content, role, isError = false, messageId = null) {
         const messagesContainer = document.getElementById('chatMessages');
         if (!messagesContainer) {
             console.error('Messages container not found');
             return;
         }
 
+        // Generate message ID if not provided
+        if (!messageId) {
+            messageId = `msg-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+        }
+
         const messageDiv = document.createElement('div');
         messageDiv.className = `message ${role === 'user' ? 'user-message' : 'ai-message'}`;
+        messageDiv.setAttribute('data-message-id', messageId);
         
         if (isError) {
             messageDiv.classList.add('error-message');
@@ -473,7 +518,7 @@ class ChatManager {
 
         messageDiv.innerHTML = `
             <div class="message-avatar">
-                <i class="fas fa-${role === 'user' ? 'user' : 'robot'}"></i>
+                ${role === 'user' ? '<i class="fas fa-user"></i>' : '<img src="assets/logo.png" alt="AI" class="avatar-logo">'}
             </div>
             <div class="message-content">
                 <p>${this.formatMessageContent(content)}</p>
@@ -482,10 +527,19 @@ class ChatManager {
         `;
 
         messagesContainer.appendChild(messageDiv);
-        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        
+        // Notify conversation component about new message
+        if (window.aiConversationComponent) {
+            window.aiConversationComponent.onNewMessage();
+        } else {
+            // Fallback to manual scroll if conversation component not available
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
 
         // Add animation
         messageDiv.classList.add('fade-in');
+        
+        return messageId;
     }
 
     showTypingIndicator() {
@@ -499,7 +553,7 @@ class ChatManager {
         typingDiv.className = 'message ai-message typing-indicator';
         typingDiv.innerHTML = `
             <div class="message-avatar">
-                <i class="fas fa-robot"></i>
+                <img src="assets/logo.png" alt="AI" class="avatar-logo">
             </div>
             <div class="message-content">
                 <div class="typing-dots">
@@ -511,7 +565,13 @@ class ChatManager {
         `;
 
         messagesContainer.appendChild(typingDiv);
-        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        
+        // Notify conversation component about new content
+        if (window.aiConversationComponent) {
+            window.aiConversationComponent.onNewMessage();
+        } else {
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
 
         // Add typing animation styles if not present
         if (!document.querySelector('#typing-styles')) {
@@ -583,13 +643,56 @@ class ChatManager {
         const words = message.split(' ').slice(0, 6);
         return words.join(' ') + (message.split(' ').length > 6 ? '...' : '');
     }
+    
+    generateReasoningSteps(message) {
+        // Generate contextual reasoning steps based on the message
+        const messageType = this.analyzeMessageType(message);
+        const authorStyle = document.getElementById('authorStyleSelect')?.value || '';
+        
+        let reasoningSteps = ['Let me think about this request step by step.'];
+        
+        // Add contextual reasoning based on message type
+        if (messageType.isQuestion) {
+            reasoningSteps.push('\n\nFirst, I need to understand what specific information is being requested.');
+        } else if (messageType.isCreativeWriting) {
+            reasoningSteps.push('\n\nI need to consider the creative elements and style requirements for this writing task.');
+        } else if (messageType.isCodeRelated) {
+            reasoningSteps.push('\n\nI should analyze the technical requirements and best practices for this coding task.');
+        } else {
+            reasoningSteps.push('\n\nFirst, I need to understand the full context of what the user is asking for.');
+        }
+        
+        // Add author style consideration if selected
+        if (authorStyle) {
+            const authorName = this.getAuthorDisplayName(authorStyle);
+            reasoningSteps.push(`\n\nI need to write in the style of ${authorName}, incorporating their unique voice and techniques.`);
+        }
+        
+        // Add message-specific analysis
+        if (message.length > 100) {
+            reasoningSteps.push('\n\nThis is a detailed request that requires careful analysis of all the requirements mentioned.');
+        }
+        
+        // Add general reasoning steps
+        reasoningSteps.push('\n\nBased on my analysis, I should provide a comprehensive and helpful response.');
+        reasoningSteps.push('\n\nLet me structure my answer to be clear, actionable, and directly address the user\'s needs.');
+        
+        return reasoningSteps.join('');
+    }
+    
+    analyzeMessageType(message) {
+        const lowerMessage = message.toLowerCase();
+        return {
+            isQuestion: lowerMessage.includes('?') || lowerMessage.includes('what') || lowerMessage.includes('how') || lowerMessage.includes('why'),
+            isCreativeWriting: lowerMessage.includes('write') || lowerMessage.includes('story') || lowerMessage.includes('article') || lowerMessage.includes('essay'),
+            isCodeRelated: lowerMessage.includes('code') || lowerMessage.includes('function') || lowerMessage.includes('debug') || lowerMessage.includes('program')
+        };
+    }
 
     async saveCurrentConversation() {
         if (!window.app || !window.app.currentConversation) return;
 
         try {
-            await window.electronAPI.conversations.save(window.app.currentConversation);
-            
             // Update the conversations list in app
             const existingIndex = window.app.conversations.findIndex(
                 c => c.id === window.app.currentConversation.id
@@ -600,6 +703,9 @@ class ChatManager {
             } else {
                 window.app.conversations.unshift(window.app.currentConversation);
             }
+            
+            // Save all conversations to storage
+            await window.electronAPI.store.set('conversations', window.app.conversations);
         } catch (error) {
             console.error('Error saving conversation:', error);
         }
@@ -618,7 +724,7 @@ class ChatManager {
             'william-shakespeare': '\\n\\nWrite in the style of William Shakespeare: Use iambic pentameter when appropriate, rich metaphors, wordplay, complex characters, and themes of love, power, and human nature. Be eloquent and poetic.',
             'saul-williams': '\\n\\nWrite in the style of Saul Williams: Blend poetry with social activism, use rhythmic language, incorporate hip-hop influences, address racial and social justice themes, and be boldly experimental.',
             'sylvia-plath': '\\n\\nWrite in the style of Sylvia Plath: Use confessional poetry techniques, vivid imagery, emotional intensity, themes of mental health and femininity, and precise, powerful language.',
-            'howard-zinn': '\\n\\nWrite in the style of Howard Zinn: Focus on people\\'s history, social justice, accessible academic writing, and perspectives from the marginalized. Be passionate about equality and human rights.',
+            'howard-zinn': '\\n\\nWrite in the style of Howard Zinn: Focus on people\'s history, social justice, accessible academic writing, and perspectives from the marginalized. Be passionate about equality and human rights.',
             'ernest-hemingway': '\\n\\nWrite in the style of Ernest Hemingway: Use the iceberg theory, spare prose, understated emotion, dialogue-driven narrative, and themes of war, love, and loss. Be economical with words.',
             'alfred-lord-tennyson': '\\n\\nWrite in the style of Alfred, Lord Tennyson: Use Victorian poetic forms, rich imagery, musical language, themes of love and loss, and classical references. Be melodious and romantic.',
             'walt-whitman': '\\n\\nWrite in the style of Walt Whitman: Use free verse, celebrate democracy and individualism, employ catalogs and repetition, and write with expansive, inclusive vision of America.',
@@ -628,7 +734,7 @@ class ChatManager {
             'kathy-acker': '\\n\\nWrite in the style of Kathy Acker: Use experimental techniques, pastiche and appropriation, punk aesthetics, feminist themes, and challenge traditional narrative structures.',
             'jorge-luis-borges': '\\n\\nWrite in the style of Jorge Luis Borges: Create labyrinthine narratives, use philosophical themes, employ magical realism, and explore concepts of infinity and reality.',
             'friedrich-nietzsche': '\\n\\nWrite in the style of Friedrich Nietzsche: Use aphoristic style, challenge conventional morality, employ passionate philosophical argument, and explore themes of power and self-creation.',
-            'simone-de-beauvoir': '\\n\\nWrite in the style of Simone de Beauvoir: Focus on existentialist themes, feminist philosophy, clear analytical prose, and exploration of women\\'s experiences and freedom.',
+            'simone-de-beauvoir': '\\n\\nWrite in the style of Simone de Beauvoir: Focus on existentialist themes, feminist philosophy, clear analytical prose, and exploration of women\'s experiences and freedom.',
             'ludwig-wittgenstein': '\\n\\nWrite in the style of Ludwig Wittgenstein: Use precise, analytical language, explore language and meaning, employ numbered propositions when appropriate, and be philosophically rigorous.',
             'michel-foucault': '\\n\\nWrite in the style of Michel Foucault: Analyze power structures, use archaeological method, explore social institutions, and employ dense, theoretical language with historical analysis.',
             'soren-kierkegaard': '\\n\\nWrite in the style of Søren Kierkegaard: Explore existential themes, use indirect communication, employ irony and paradox, and focus on individual experience and faith.',
@@ -638,7 +744,7 @@ class ChatManager {
             'albert-camus': '\\n\\nWrite in the style of Albert Camus: Explore absurdist themes, use clear, direct prose, focus on human dignity in meaningless universe, and address moral questions.',
             'robert-frost': '\\n\\nWrite in the style of Robert Frost: Use rural New England imagery, employ traditional poetic forms, explore themes of nature and human choice, and write with deceptive simplicity.',
             'cs-lewis': '\\n\\nWrite in the style of C.S. Lewis: Combine Christian themes with fantasy elements, use clear, accessible prose, employ allegory and symbolism, and focus on moral and spiritual growth.',
-            'virginia-woolf': '\\n\\nWrite in the style of Virginia Woolf: Use stream of consciousness, explore interior psychology, employ lyrical prose, and focus on women\\'s experiences and modernist techniques.',
+            'virginia-woolf': '\\n\\nWrite in the style of Virginia Woolf: Use stream of consciousness, explore interior psychology, employ lyrical prose, and focus on women\'s experiences and modernist techniques.',
             'jules-verne': '\\n\\nWrite in the style of Jules Verne: Create adventure narratives, use scientific speculation, employ detailed descriptions of technology and exploration, and maintain optimistic view of progress.',
             'oscar-wilde': '\\n\\nWrite in the style of Oscar Wilde: Use wit and paradox, employ aesthetic philosophy, create brilliant dialogue, and focus on beauty, art, and social satire.',
             'ray-bradbury': '\\n\\nWrite in the style of Ray Bradbury: Use poetic science fiction, focus on human emotion, employ nostalgic themes, and create atmospheric, lyrical descriptions.',
@@ -648,7 +754,7 @@ class ChatManager {
             'leo-tolstoy': '\\n\\nWrite in the style of Leo Tolstoy: Use epic scope, explore moral and spiritual themes, employ psychological realism, and focus on human nature and social issues.',
             'herman-melville': '\\n\\nWrite in the style of Herman Melville: Use philosophical themes, employ maritime imagery, explore existential questions, and combine adventure with deep symbolism.',
             'italo-calvino': '\\n\\nWrite in the style of Italo Calvino: Use postmodern techniques, employ fantasy and fable elements, focus on storytelling itself, and combine playfulness with philosophical depth.',
-            'flannery-oconnor': '\\n\\nWrite in the style of Flannery O\\'Connor: Use Southern Gothic elements, employ dark humor, focus on religious themes, and create grotesque yet sympathetic characters.',
+            'flannery-oconnor': '\\n\\nWrite in the style of Flannery O\'Connor: Use Southern Gothic elements, employ dark humor, focus on religious themes, and create grotesque yet sympathetic characters.',
             'dante-alighieri': '\\n\\nWrite in the style of Dante Alighieri: Use allegorical structure, employ medieval Christian themes, create epic scope, and combine personal journey with universal significance.'
         };
 
@@ -714,11 +820,36 @@ class ChatManager {
             'leo-tolstoy': 'Leo Tolstoy',
             'herman-melville': 'Herman Melville',
             'italo-calvino': 'Italo Calvino',
-            'flannery-oconnor': 'Flannery O\\'Connor',
+            'flannery-oconnor': 'Flannery O\'Connor',
             'dante-alighieri': 'Dante Alighieri'
         };
 
         return displayNames[authorStyle] || authorStyle;
+    }
+
+    showErrorModal(message) {
+        const modal = document.getElementById('errorModal');
+        const errorMessage = document.getElementById('errorMessage');
+        
+        if (modal && errorMessage) {
+            errorMessage.textContent = message;
+            modal.classList.remove('hidden');
+        }
+    }
+    
+    closeErrorModal() {
+        const modal = document.getElementById('errorModal');
+        if (modal) {
+            modal.classList.add('hidden');
+        }
+    }
+    
+    goToApiKeys() {
+        this.closeErrorModal();
+        // Navigate to API Keys view
+        if (window.app && window.app.switchView) {
+            window.app.switchView('api-keys');
+        }
     }
 }
 

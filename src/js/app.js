@@ -1,3 +1,7 @@
+// Import CSS files
+import '../css/styles.css';
+import '../css/components.css';
+
 // Main Application Logic
 class ScriptorUmbraApp {
     constructor() {
@@ -20,14 +24,14 @@ class ScriptorUmbraApp {
 
     async loadData() {
         try {
-            this.apiKeys = await window.electronAPI.apiKeys.get() || {};
-            this.preferences = await window.electronAPI.preferences.get() || {
+            this.apiKeys = await window.electronAPI.store.get('apiKeys') || {};
+            this.preferences = await window.electronAPI.store.get('preferences') || {
                 theme: 'light',
                 defaultProvider: 'openai',
                 autoSave: true,
                 notifications: true
             };
-            this.conversations = await window.electronAPI.conversations.get() || [];
+            this.conversations = await window.electronAPI.store.get('conversations') || [];
         } catch (error) {
             console.error('Error loading data:', error);
         }
@@ -53,10 +57,12 @@ class ScriptorUmbraApp {
             this.changeTheme(e.target.value);
         });
 
-        // Preferences menu listener
-        window.electronAPI.onShowPreferences(() => {
-            this.showView('settings');
-        });
+        // Preferences menu listener (web compatible)
+        if (window.electronAPI && window.electronAPI.onShowPreferences) {
+            window.electronAPI.onShowPreferences(() => {
+                this.showView('settings');
+            });
+        }
     }
 
     setupNavigation() {
@@ -240,7 +246,7 @@ class ScriptorUmbraApp {
         document.getElementById('chatMessages').innerHTML = `
             <div class="message ai-message">
                 <div class="message-avatar">
-                    <i class="fas fa-robot"></i>
+                    <img src="assets/logo.png" alt="AI" class="avatar-logo">
                 </div>
                 <div class="message-content">
                     <p>Hello! I'm Scriptor Umbra AI, your intelligent ghostwriting assistant. I specialize in creating articles, books, copywriting, and other long-form content. How can I help you with your writing today?</p>
@@ -355,6 +361,64 @@ class ScriptorUmbraApp {
 
     capitalizeFirst(str) {
         return str.charAt(0).toUpperCase() + str.slice(1);
+    }
+    
+    createNewConversation() {
+        this.currentConversation = {
+            id: this.generateId(),
+            title: 'New Conversation',
+            messages: [],
+            provider: 'openai',
+            authorStyle: '',
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+        };
+        
+        // Clear chat interface
+        const chatMessages = document.getElementById('chatMessages');
+        if (chatMessages) {
+            chatMessages.innerHTML = `
+                <div class="message ai-message">
+                    <div class="message-avatar">
+                        <img src="assets/logo.png" alt="AI" class="avatar-logo">
+                    </div>
+                    <div class="message-content">
+                        <p>Hello! I'm Scriptor Umbra AI, your intelligent ghostwriting assistant. I specialize in creating articles, books, copywriting, and other long-form content. How can I help you with your writing today?</p>
+                        <span class="message-time">Just now</span>
+                    </div>
+                </div>
+            `;
+        }
+        
+        // Switch to chat view
+        this.showView('chat');
+    }
+    
+    async saveSettings() {
+        try {
+            // Collect current settings from UI
+            const themeSelect = document.getElementById('theme-select');
+            const defaultProviderSelect = document.getElementById('default-provider');
+            const autoSaveCheck = document.getElementById('auto-save');
+            const notificationsCheck = document.getElementById('notifications');
+            const soundEffectsCheck = document.getElementById('sound-effects');
+            
+            this.preferences = {
+                theme: themeSelect ? themeSelect.value : 'light',
+                defaultProvider: defaultProviderSelect ? defaultProviderSelect.value : 'openai',
+                autoSave: autoSaveCheck ? autoSaveCheck.checked : true,
+                notifications: notificationsCheck ? notificationsCheck.checked : true,
+                soundEffects: soundEffectsCheck ? soundEffectsCheck.checked : false
+            };
+            
+            // Save to storage
+            await window.electronAPI.store.set('preferences', this.preferences);
+            
+            // Apply theme immediately
+            this.applyTheme();
+        } catch (error) {
+            console.error('Error saving settings:', error);
+        }
     }
 }
 

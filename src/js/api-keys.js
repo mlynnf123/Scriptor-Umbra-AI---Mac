@@ -106,7 +106,7 @@ class ApiKeysManager {
 
         try {
             // Get current API keys
-            const apiKeys = await window.electronAPI.apiKeys.get() || {};
+            const apiKeys = await window.electronAPI.store.get('apiKeys') || {};
             
             if (key) {
                 apiKeys[provider] = key;
@@ -117,7 +117,7 @@ class ApiKeysManager {
             }
 
             // Save to secure storage
-            await window.electronAPI.apiKeys.save(apiKeys);
+            await window.electronAPI.store.set('apiKeys', apiKeys);
             
             // Update app's apiKeys
             if (window.app) {

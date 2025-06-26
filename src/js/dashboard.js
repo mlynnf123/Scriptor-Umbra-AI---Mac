@@ -8,7 +8,17 @@ document.addEventListener('DOMContentLoaded', () => {
     // Export conversations
     document.getElementById('exportConversations').addEventListener('click', async () => {
         try {
-            const result = await window.electronAPI.conversations.export();
+            // For web version, implement a simple download
+            const conversations = await window.electronAPI.store.get('conversations') || [];
+            const dataStr = JSON.stringify(conversations, null, 2);
+            const dataBlob = new Blob([dataStr], {type: 'application/json'});
+            const url = URL.createObjectURL(dataBlob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `scriptor-umbra-conversations-${new Date().toISOString().split('T')[0]}.json`;
+            link.click();
+            URL.revokeObjectURL(url);
+            const result = { success: true };
             if (result.success) {
                 window.apiKeysManager?.showNotification('Conversations exported successfully', 'success');
             } else {
@@ -23,19 +33,29 @@ document.addEventListener('DOMContentLoaded', () => {
     // Import conversations
     document.getElementById('importConversations').addEventListener('click', async () => {
         try {
-            const result = await window.electronAPI.conversations.import();
-            if (result.success) {
-                window.apiKeysManager?.showNotification(`Imported ${result.count} conversations`, 'success');
-                // Refresh conversations view
-                if (window.app) {
-                    await window.app.loadData();
-                    window.app.loadConversationsData();
+            // For web version, implement file input
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.json';
+            input.onchange = async (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    const text = await file.text();
+                    const conversations = JSON.parse(text);
+                    await window.electronAPI.store.set('conversations', conversations);
+                    const result = { success: true, count: conversations.length };
+                    
+                    if (result.success) {
+                        window.apiKeysManager?.showNotification(`Imported ${result.count} conversations`, 'success');
+                        // Refresh conversations view
+                        if (window.app) {
+                            await window.app.loadData();
+                            window.app.loadConversationsData();
+                        }
+                    }
                 }
-            } else if (result.error) {
-                window.apiKeysManager?.showNotification(`Import error: ${result.error}`, 'error');
-            } else {
-                window.apiKeysManager?.showNotification('Import cancelled', 'info');
-            }
+            };
+            input.click();
         } catch (error) {
             console.error('Import error:', error);
             window.apiKeysManager?.showNotification('Error importing conversations', 'error');
