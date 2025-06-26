@@ -30,7 +30,9 @@ function createWindow() {
       contextIsolation: true,
       preload: path.join(__dirname, 'preload.js')
     },
-    icon: path.join(__dirname, 'assets', 'icon.png'),
+    icon: process.platform === 'darwin' 
+      ? path.join(__dirname, 'assets', 'icon.icns')
+      : path.join(__dirname, 'assets', 'icon.png'),
     titleBarStyle: 'default', // Use default title bar for proper window controls
     movable: true, // Explicitly enable window movement
     resizable: true, // Explicitly enable window resizing
@@ -176,7 +178,13 @@ ipcMain.handle('store-clear', async () => {
 });
 
 // App event handlers
-app.whenReady().then(createWindow);
+app.whenReady().then(() => {
+  // Set dock icon for macOS
+  if (process.platform === 'darwin' && app.dock) {
+    app.dock.setIcon(path.join(__dirname, 'assets', 'icon.icns'));
+  }
+  createWindow();
+});
 
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {

@@ -151,7 +151,7 @@ class ChatManager {
             messageDiv.setAttribute('data-message-id', aiMessageId);
             messageDiv.innerHTML = `
                 <div class="message-avatar">
-                    <i class="fas fa-feather-alt"></i>
+                    <img src="assets/logo.png" alt="AI" class="avatar-logo">
                 </div>
                 <div class="message-content">
                     <p></p>
@@ -518,7 +518,7 @@ class ChatManager {
 
         messageDiv.innerHTML = `
             <div class="message-avatar">
-                <i class="fas fa-${role === 'user' ? 'user' : 'feather-alt'}"></i>
+                ${role === 'user' ? '<i class="fas fa-user"></i>' : '<img src="assets/logo.png" alt="AI" class="avatar-logo">'}
             </div>
             <div class="message-content">
                 <p>${this.formatMessageContent(content)}</p>
@@ -553,7 +553,7 @@ class ChatManager {
         typingDiv.className = 'message ai-message typing-indicator';
         typingDiv.innerHTML = `
             <div class="message-avatar">
-                <i class="fas fa-feather-alt"></i>
+                <img src="assets/logo.png" alt="AI" class="avatar-logo">
             </div>
             <div class="message-content">
                 <div class="typing-dots">

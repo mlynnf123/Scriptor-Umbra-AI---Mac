@@ -92,6 +92,22 @@ body {
   color: var(--primary-color);
 }
 
+.app-logo-image {
+  width: 36px;
+  height: 36px;
+  object-fit: cover;
+  border-radius: 8px;
+  flex-shrink: 0;
+}
+
+.avatar-logo {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+  display: block;
+}
+
 .sidebar-nav {
   flex: 1;
   padding: 1rem 0;

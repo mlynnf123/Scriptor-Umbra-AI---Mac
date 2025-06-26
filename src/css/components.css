@@ -72,6 +72,13 @@
 .ai-message .message-avatar {
   background-color: var(--primary-color);
   color: white;
+  overflow: hidden;
+}
+
+/* Remove background when avatar contains an image */
+.ai-message .message-avatar:has(img) {
+  background-color: transparent;
+  padding: 0;
 }
 
 .user-message .message-avatar {

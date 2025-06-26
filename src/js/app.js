@@ -246,7 +246,7 @@ class ScriptorUmbraApp {
         document.getElementById('chatMessages').innerHTML = `
             <div class="message ai-message">
                 <div class="message-avatar">
-                    <i class="fas fa-feather-alt"></i>
+                    <img src="assets/logo.png" alt="AI" class="avatar-logo">
                 </div>
                 <div class="message-content">
                     <p>Hello! I'm Scriptor Umbra AI, your intelligent ghostwriting assistant. I specialize in creating articles, books, copywriting, and other long-form content. How can I help you with your writing today?</p>
@@ -380,7 +380,7 @@ class ScriptorUmbraApp {
             chatMessages.innerHTML = `
                 <div class="message ai-message">
                     <div class="message-avatar">
-                        <i class="fas fa-feather-alt"></i>
+                        <img src="assets/logo.png" alt="AI" class="avatar-logo">
                     </div>
                     <div class="message-content">
                         <p>Hello! I'm Scriptor Umbra AI, your intelligent ghostwriting assistant. I specialize in creating articles, books, copywriting, and other long-form content. How can I help you with your writing today?</p>
