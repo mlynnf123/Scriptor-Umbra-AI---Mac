@@ -1,0 +1,35 @@
+{
+  "recommendations": [
+    "ms-vscode.vscode-eslint",
+    "esbenp.prettier-vscode",
+    "bradlc.vscode-tailwindcss",
+    "ms-vscode.vscode-json",
+    "christian-kohler.path-intellisense",
+    "formulahendry.auto-rename-tag",
+    "ms-vscode.vscode-typescript-next",
+    "ms-vscode.js-debug",
+    "ms-vscode.vscode-js-profile-flame",
+    "ms-vscode.references-view",
+    "ms-vscode.vscode-npm-script",
+    "ms-vscode.vscode-node-azure-pack",
+    "ms-vscode.vscode-github-issue-notebooks",
+    "github.vscode-pull-request-github",
+    "ms-vscode.vscode-github-issue-notebooks",
+    "ms-vscode.hexeditor",
+    "ms-vscode.vscode-markdown",
+    "yzhang.markdown-all-in-one",
+    "davidanson.vscode-markdownlint",
+    "ms-vscode.vscode-css-peek",
+    "zignd.html-css-class-completion",
+    "formulahendry.auto-close-tag",
+    "ms-vscode.vscode-html-language-features",
+    "ms-vscode.vscode-css-language-features",
+    "ms-vscode.vscode-emmet",
+    "ms-vscode.vscode-file-watcher",
+    "ms-vscode.vscode-folding-range",
+    "ms-vscode.vscode-outline",
+    "ms-vscode.vscode-search-result",
+    "ms-vscode.vscode-workspace-trust"
+  ]
+}
+
