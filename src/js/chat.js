@@ -197,7 +197,13 @@ class ChatManager {
         } catch (error) {
             console.error('Error getting AI response:', error);
             this.removeTypingIndicator();
-            this.addMessageToUI('Sorry, I encountered an error while processing your request. Please check your API key configuration and try again.', 'assistant', true);
+            
+            // Check if it's an API key error
+            if (error.message.includes('No API key configured')) {
+                this.showErrorModal(error.message);
+            } else {
+                this.addMessageToUI('Sorry, I encountered an error while processing your request. ' + error.message, 'assistant', true);
+            }
         } finally {
             this.isProcessing = false;
         }
@@ -819,6 +825,31 @@ class ChatManager {
         };
 
         return displayNames[authorStyle] || authorStyle;
+    }
+
+    showErrorModal(message) {
+        const modal = document.getElementById('errorModal');
+        const errorMessage = document.getElementById('errorMessage');
+        
+        if (modal && errorMessage) {
+            errorMessage.textContent = message;
+            modal.classList.remove('hidden');
+        }
+    }
+    
+    closeErrorModal() {
+        const modal = document.getElementById('errorModal');
+        if (modal) {
+            modal.classList.add('hidden');
+        }
+    }
+    
+    goToApiKeys() {
+        this.closeErrorModal();
+        // Navigate to API Keys view
+        if (window.app && window.app.switchView) {
+            window.app.switchView('api-keys');
+        }
     }
 }
 

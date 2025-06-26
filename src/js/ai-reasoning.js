@@ -325,26 +325,36 @@ class AIReasoningComponent {
             contentEl.innerHTML = this.content;
         }
 
-        // Stop animation and update label
+        // Keep animation running and update label to show generating response
         const icon = reasoningEl.querySelector('.ai-reasoning-icon');
-        if (icon) icon.classList.add('static');
+        // Don't stop animation yet - keep it running until response is complete
         
         const label = reasoningEl.querySelector('.ai-reasoning-label span');
-        if (label) label.textContent = 'Thought for ' + Math.round(this.tokens.length * 30 / 1000 * 10) / 10 + ' seconds';
+        if (label) label.textContent = 'Generating response...';
 
-        // Auto-collapse after 2 seconds
-        setTimeout(() => {
-            if (reasoningEl && reasoningEl.classList.contains('expanded')) {
-                reasoningEl.classList.remove('expanded');
-                reasoningEl.classList.add('collapsed');
-            }
-        }, 2000);
+        // Don't auto-collapse - wait for stopReasoning to be called
     }
 
     stopReasoning(messageId) {
         const reasoningEl = document.getElementById(`reasoning-${messageId}`);
         if (reasoningEl) {
-            this.finishStreaming(reasoningEl);
+            // Stop animation and update final label
+            const icon = reasoningEl.querySelector('.ai-reasoning-icon');
+            if (icon) icon.classList.add('static');
+            
+            const label = reasoningEl.querySelector('.ai-reasoning-label span');
+            if (label) {
+                const thinkingTime = Math.round(this.tokens.length * 30 / 1000 * 10) / 10;
+                label.textContent = `Thought for ${thinkingTime} seconds`;
+            }
+
+            // Auto-collapse after 2 seconds
+            setTimeout(() => {
+                if (reasoningEl && reasoningEl.classList.contains('expanded')) {
+                    reasoningEl.classList.remove('expanded');
+                    reasoningEl.classList.add('collapsed');
+                }
+            }, 2000);
         }
     }
 }

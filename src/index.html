@@ -471,6 +471,27 @@
         </div>
     </div>
 
+    <!-- Error Modal -->
+    <div id="errorModal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-exclamation-triangle"></i> API Key Required</h3>
+                <button class="modal-close" onclick="window.chatManager.closeErrorModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p id="errorMessage">No API key configured. Please add your API key in the API Keys section.</p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="window.chatManager.closeErrorModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="window.chatManager.goToApiKeys()">
+                    <i class="fas fa-key"></i> Configure API Keys
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- Scripts are handled by webpack -->
 </body>
 </html>

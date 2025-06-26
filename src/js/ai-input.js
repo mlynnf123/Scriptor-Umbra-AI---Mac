@@ -499,7 +499,7 @@ class AIInputComponent {
         // Create a hidden file input
         const fileInput = document.createElement('input');
         fileInput.type = 'file';
-        fileInput.accept = '.txt,.md,.pdf,.doc,.docx,.json';
+        fileInput.accept = '.txt,.md,.pdf,.doc,.docx,.json,.csv,.xml,.log,.yml,.yaml,.js,.ts,.jsx,.tsx,.py,.java,.cpp,.c,.cs,.php,.rb,.go,.rs,.swift,.kt,.html,.css,.scss,.less,.sql,.sh,.bat,.ps1,.rtf,.odt,.ods,.odp,.xls,.xlsx,.ppt,.pptx';
         fileInput.style.display = 'none';
         
         fileInput.addEventListener('change', (e) => {
@@ -533,10 +533,38 @@ class AIInputComponent {
             `;
             attachButton.classList.add('processing');
             
-            const text = await this.readFileAsText(file);
             const textarea = document.getElementById('aiInputTextarea');
             if (textarea) {
-                const prompt = `Please analyze this file content:\n\n**File: ${file.name}**\n\n${text}`;
+                // Determine file type and create appropriate prompt
+                const fileType = file.type || 'unknown';
+                const fileExt = file.name.split('.').pop().toLowerCase();
+                const fileName = file.name;
+                const fileSize = this.formatFileSize(file.size);
+                
+                let prompt = '';
+                
+                // Check if it's a text-based file
+                const textBasedExtensions = ['txt', 'md', 'json', 'csv', 'xml', 'log', 'yml', 'yaml'];
+                const codeExtensions = ['js', 'ts', 'jsx', 'tsx', 'py', 'java', 'cpp', 'c', 'cs', 'php', 'rb', 'go', 'rs', 'swift', 'kt'];
+                
+                if (textBasedExtensions.includes(fileExt) || codeExtensions.includes(fileExt) || fileType.includes('text/')) {
+                    // For text files, read and include content
+                    const text = await this.readFileAsText(file);
+                    prompt = `I've attached a ${fileExt.toUpperCase()} file for analysis:\n\n**File:** ${fileName} (${fileSize})\n\n**Content:**\n\`\`\`${fileExt}\n${text}\n\`\`\`\n\nPlease analyze this file.`;
+                } else if (fileType.includes('image/')) {
+                    // For images, just show preview info
+                    prompt = `I've attached an image file:\n\n**File:** ${fileName} (${fileSize})\n**Type:** ${fileType}\n\nPlease help me with this image.`;
+                } else if (fileExt === 'pdf' || fileType === 'application/pdf') {
+                    // For PDFs, show preview info
+                    prompt = `I've attached a PDF document:\n\n**File:** ${fileName} (${fileSize})\n\nPlease help me analyze or work with this PDF document.`;
+                } else if (fileExt === 'doc' || fileExt === 'docx' || fileType.includes('document')) {
+                    // For Word documents
+                    prompt = `I've attached a Word document:\n\n**File:** ${fileName} (${fileSize})\n\nPlease help me with this document.`;
+                } else {
+                    // For other file types
+                    prompt = `I've attached a file:\n\n**File:** ${fileName} (${fileSize})\n**Type:** ${fileType || fileExt.toUpperCase() + ' file'}\n\nPlease help me with this file.`;
+                }
+                
                 textarea.value = prompt;
                 this.text = prompt;
                 this.autoResize(textarea);
@@ -560,6 +588,14 @@ class AIInputComponent {
             reader.onerror = (e) => reject(e);
             reader.readAsText(file);
         });
+    }
+    
+    formatFileSize(bytes) {
+        if (bytes === 0) return '0 Bytes';
+        const k = 1024;
+        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
     }
 
     handleVoiceInput() {
