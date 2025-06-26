@@ -241,3 +241,4 @@ For development questions or issues:
 ## 📄 License
 
 MIT License - See package.json for details
+

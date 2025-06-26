@@ -66,23 +66,6 @@ class AIInputComponent {
                             </svg>
                             <span>Search</span>
                         </button>
-                        
-                        <div class="ai-input-model-select">
-                            <button class="ai-input-model-trigger" id="modelSelectTrigger">
-                                <span class="model-value">${this.getModelName(this.model)}</span>
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <polyline points="6,9 12,15 18,9"/>
-                                </svg>
-                            </button>
-                            
-                            <div class="ai-input-model-dropdown" id="modelDropdown" style="display: none;">
-                                ${this.models.map(model => `
-                                    <div class="ai-input-model-item" data-value="${model.id}">
-                                        ${model.name}
-                                    </div>
-                                `).join('')}
-                            </div>
-                        </div>
                     </div>
                     
                     <button class="ai-input-submit" id="aiInputSubmit" ${!this.text ? 'disabled' : ''}>
@@ -218,61 +201,6 @@ class AIInputComponent {
                 100% { opacity: 1; }
             }
 
-            .ai-input-model-select {
-                position: relative;
-            }
-
-            .ai-input-model-trigger {
-                display: flex;
-                align-items: center;
-                gap: 6px;
-                padding: 6px 8px;
-                border: 1px solid #e5e7eb;
-                background: white;
-                border-radius: 6px;
-                color: #374151;
-                font-size: 12px;
-                cursor: pointer;
-                transition: all 0.2s ease;
-                min-width: 120px;
-            }
-
-            .ai-input-model-trigger:hover {
-                border-color: #d1d5db;
-                background: #f9fafb;
-            }
-
-            .ai-input-model-dropdown {
-                position: absolute;
-                top: 100%;
-                left: 0;
-                right: 0;
-                background: white;
-                border: 1px solid #e5e7eb;
-                border-radius: 6px;
-                box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15), 0 4px 6px rgba(0, 0, 0, 0.1);
-                z-index: 9999;
-                max-height: 200px;
-                overflow-y: auto;
-                margin-top: 4px;
-            }
-
-            .ai-input-model-item {
-                padding: 8px 12px;
-                font-size: 12px;
-                cursor: pointer;
-                transition: background-color 0.2s ease;
-            }
-
-            .ai-input-model-item:hover {
-                background: #f3f4f6;
-            }
-
-            .ai-input-model-item.selected {
-                background: #3b82f6;
-                color: white;
-            }
-
             .ai-input-submit {
                 padding: 8px 16px;
                 border: none;
@@ -348,26 +276,6 @@ class AIInputComponent {
                 background: #4b5563;
             }
 
-            [data-theme="dark"] .ai-input-model-trigger {
-                background: #374151;
-                border-color: #4b5563;
-                color: #f9fafb;
-            }
-
-            [data-theme="dark"] .ai-input-model-trigger:hover {
-                background: #4b5563;
-                border-color: #6b7280;
-            }
-
-            [data-theme="dark"] .ai-input-model-dropdown {
-                background: #374151;
-                border-color: #4b5563;
-            }
-
-            [data-theme="dark"] .ai-input-model-item:hover {
-                background: #4b5563;
-            }
-
             /* Responsive design */
             @media (max-width: 1024px) {
                 .ai-input-wrapper {
@@ -423,56 +331,12 @@ class AIInputComponent {
             });
         }
 
-        // Model select
-        if (modelTrigger) {
-            modelTrigger.addEventListener('click', (e) => {
-                e.stopPropagation();
-                const isVisible = modelDropdown.style.display !== 'none';
-                modelDropdown.style.display = isVisible ? 'none' : 'block';
-            });
-        }
-
-        // Model dropdown items
-        const modelItems = document.querySelectorAll('.ai-input-model-item');
-        modelItems.forEach(item => {
-            item.addEventListener('click', () => {
-                this.model = item.dataset.value;
-                this.updateModelDisplay();
-                modelDropdown.style.display = 'none';
-                
-                // Update the main provider select to match and track usage
-                const providerSelect = document.getElementById('aiProviderSelect');
-                if (providerSelect) {
-                    const selectedModel = this.models.find(m => m.id === this.model);
-                    if (selectedModel) {
-                        providerSelect.value = selectedModel.provider;
-                        
-                        // Update conversation with selected model
-                        if (window.app && window.app.currentConversation) {
-                            window.app.currentConversation.provider = selectedModel.provider;
-                            window.app.currentConversation.model = this.model;
-                        }
-                        
-                        // Track model usage for dashboard
-                        this.trackModelUsage(selectedModel.provider, this.model);
-                    }
-                }
-            });
-        });
-
         // Tool buttons
         document.querySelectorAll('.ai-input-button').forEach(button => {
             button.addEventListener('click', () => {
                 const action = button.dataset.action;
                 this.handleToolAction(action);
             });
-        });
-
-        // Close dropdown when clicking outside
-        document.addEventListener('click', (e) => {
-            if (!e.target.closest('.ai-input-model-select')) {
-                modelDropdown.style.display = 'none';
-            }
         });
     }
 

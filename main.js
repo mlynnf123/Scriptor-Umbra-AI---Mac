@@ -35,15 +35,12 @@ function createWindow() {
     show: false
   });
 
-  // Load the index.html file
-  if (isDev) {
-    mainWindow.loadFile(path.join(__dirname, 'src', 'index.html'));
-    // Only open dev tools if explicitly requested
-    if (process.argv.includes('--devtools')) {
-      mainWindow.webContents.openDevTools();
-    }
-  } else {
-    mainWindow.loadFile(path.join(__dirname, 'build', 'index.html'));
+  // Load the index.html file from build directory
+  mainWindow.loadFile(path.join(__dirname, 'build', 'index.html'));
+  
+  // Only open dev tools if explicitly requested
+  if (process.argv.includes('--devtools')) {
+    mainWindow.webContents.openDevTools();
   }
 
   // Show window when ready
