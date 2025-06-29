@@ -113,3 +113,8 @@ local/
 *.bak
 *.backup
 
+# Vercel
+.vercel
+
+# Railway
+.railway
